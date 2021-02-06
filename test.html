@@ -13,12 +13,29 @@
   <div id='my_dataviz'></div>
 <script>
 
+function plot_bars(svg,data,height,b_axis_margin,xScale,yScale){
+    bar_width = 5
+    svg.selectAll("rect")
+     .data(data)
+     .enter()
+     .append("rect")
+       .attr("height", d => yScale(d.Total))
+       //BAR WIDTH
+       .attr("width", d => bar_width)
+       .attr("x", function(d,i){return(xScale(i));} )
+       .attr("y", 0)
+       //MOVE BARS FROM TOP TO BOTTOM
+       .attr("transform", function(d) { return "translate(" + 0 + "," + (height - b_axis_margin - yScale(d.Total)).toString() + ")"; })
+       .style("fill", "#69b3a2")
+}
+
   function main(data){
-    let height = 300;
-    let width = 600;
+    var b_axis_margin = 80;
+    var margin = {top: 10, right: 30, bottom: 30, left: 40},
+      width = 960 - margin.left - margin.right,
+      height = 300 - margin.top - margin.bottom + b_axis_margin;
     const min = 0;
     let max = d3.max(data,x => x["Total"])
-    let margin = 200;
 
     //Thanks https://www.d3-graph-gallery.com/graph/histogram_basic.html
     //Set up SVG
@@ -30,28 +47,39 @@
     .attr("transform",
           "translate(" + margin.left + "," + margin.top + ")");
 
-    const xScale = d3.scaleLinear()
+    var artists = data.map(d => d.Artist);
+    console.log(artists);
+    var ticksArray = [...Array(artists.length).keys()]
+
+    var yScale = d3.scaleLinear()
       .domain([0,max])
-      .range([0,height]);
+      //.range([height- b_axis_margin ,0])
+      .range([0,height- b_axis_margin])
 
-    const yScale = d3.scaleBand()
-      .domain(data.map(d => d.Artist))
-      .range([0,height])
+    var xScale = d3.scaleLinear()
+      .domain([0,data.length-1])
+      .range([0,width]);
 
-    //d3.selectAll("div")
-    //  .data(data)
-    //.enter().append("div").text(function(d) { return d.Total + " "; })
+    var myBottomAxis = d3.axisBottom(xScale)
+      .ticks(data.length).tickFormat(function(d,i){ return artists[i]});
 
-    svg.selectAll("rect")
-     .data(data)
-     .enter()
-     .append("rect")
-       .attr("height", d => xScale(d.Total))
-       .attr("width", d => 5)
-       .attr("x", d => data.indexOf(d)*7)
-       .attr("y", 0)
-       .attr("transform", function(d) { return "translate(" + 0 + "," + (height - xScale(d.Total)).toString() + ")"; })
-       .style("fill", "#69b3a2")
+    //DRAW BARS
+    plot_bars(svg,data,height,b_axis_margin,xScale,yScale)
+
+    // AXIS
+    svg.append("g")
+        .call(d3.axisLeft(yScale));
+    var axis_height = height - b_axis_margin;
+    svg.append("g")
+        .call(myBottomAxis)
+        .attr("transform","translate(0,+"+axis_height.toString()+")")
+        .selectAll("text")
+            .style("text-anchor", "end")
+            .attr("dx", "-.8em")
+            .attr("dy", ".15em")
+            .attr("transform", function(d) {
+                return "rotate(-65)"
+                });
   }
 
   //Index,Artist,Total,Diff,Diversity

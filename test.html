@@ -13,29 +13,36 @@
   <div id='my_dataviz'></div>
 <script>
 
+//var file = 'all.csv'
+var file = 'all_diversity_sorted.csv'
+//var field = 'Total'
+var field = 'Diversity'
+
+
 function plot_bars(svg,data,height,b_axis_margin,xScale,yScale){
     bar_width = 5
     svg.selectAll("rect")
      .data(data)
      .enter()
      .append("rect")
-       .attr("height", d => yScale(d.Total))
+       .attr("height", d => yScale(d[field]))
        //BAR WIDTH
        .attr("width", d => bar_width)
        .attr("x", function(d,i){return(xScale(i));} )
        .attr("y", 0)
        //MOVE BARS FROM TOP TO BOTTOM
-       .attr("transform", function(d) { return "translate(" + 0 + "," + (height - b_axis_margin - yScale(d.Total)).toString() + ")"; })
+       .attr("transform", function(d) { return "translate(" + 0 + "," + (height - b_axis_margin - yScale(d[field])).toString() + ")"; })
        .style("fill", "#69b3a2")
 }
 
   function main(data){
+    console.log(data);
     var b_axis_margin = 80;
     var margin = {top: 10, right: 30, bottom: 30, left: 40},
       width = 960 - margin.left - margin.right,
       height = 300 - margin.top - margin.bottom + b_axis_margin;
     const min = 0;
-    let max = d3.max(data,x => x["Total"])
+    let max = d3.max(data,x => x[field])
 
     //Thanks https://www.d3-graph-gallery.com/graph/histogram_basic.html
     //Set up SVG
@@ -52,9 +59,16 @@ function plot_bars(svg,data,height,b_axis_margin,xScale,yScale){
     var ticksArray = [...Array(artists.length).keys()]
 
     var yScale = d3.scaleLinear()
+      //.domain([max,0])
       .domain([0,max])
       //.range([height- b_axis_margin ,0])
       .range([0,height- b_axis_margin])
+
+    var axisYScale = d3.scaleLinear()
+      //.domain([max,0])
+      .domain([0,max])
+      .range([height- b_axis_margin ,0])
+      //.range([0,height- b_axis_margin])
 
     var xScale = d3.scaleLinear()
       .domain([0,data.length-1])
@@ -68,7 +82,7 @@ function plot_bars(svg,data,height,b_axis_margin,xScale,yScale){
 
     // AXIS
     svg.append("g")
-        .call(d3.axisLeft(yScale));
+        .call(d3.axisLeft(axisYScale));
     var axis_height = height - b_axis_margin;
     svg.append("g")
         .call(myBottomAxis)
@@ -84,7 +98,7 @@ function plot_bars(svg,data,height,b_axis_margin,xScale,yScale){
 
   //Index,Artist,Total,Diff,Diversity
   //MAIN CALL HERE
-  d3.csv("http://localhost:8000/sample.csv",main);
+  d3.csv("http://localhost:8000/"+file,main);
 
 </script>
 

@@ -2,14 +2,24 @@
 <html lang = "en">
    <head>
       <script src = "https://d3js.org/d3.v4.min.js"></script>
+      <style>
+        .tooltip {
+            position: absolute;
+            font-size: 12px;
+            width:  auto;
+            height: auto;
+            pointer-events: none;
+            background-color: white;
+        }
+      </style>
    </head>
    <body>
      <div id="my_scatterplot"></div>
       <script>
       function main(data){
-        X_FIELD = "Diff"
-        Y_FIELD = "Total"
-        var margin = {top: 10, right: 30, bottom: 30, left: 60},
+        X_FIELD = "Total"
+        Y_FIELD = "Diversity"
+        var margin = {top: 30, right: 30, bottom: 30, left: 60},
           width = 460 - margin.left - margin.right,
           height = 400 - margin.top - margin.bottom;
           var svg = d3.select("#my_scatterplot").append("svg")
@@ -18,19 +28,35 @@
             .append("g")
             .attr("transform","translate(" + margin.left + "," + margin.top + ")");
 
-        //X AXIS = diversity
-        let x_max = d3.max(data, x => x[X_FIELD])
-        //Y AXIS = total
-        let y_max = d3.max(data, x => x[Y_FIELD])
+        //TOOLTIP
+         var tooltip = d3.select("#my_scatterplot").append("div")
+             .attr("class", "tooltip")
+             .style("opacity", 0);
+         var tipMouseover = function(d) {
+             var color = "#ffffff";
+             var html  = "<span>" + d.Artist + "</span>";
+             tooltip.html(html)
+                 .style("left", (d3.event.pageX + 15) + "px")
+                 .style("top", (d3.event.pageY - 28) + "px")
+                 .style("opacity", .9) // started as 0!
+         };
+         var tipMouseout = function(d) {
+             tooltip.transition()
+                 .duration(300) // ms
+                 .style("opacity", 0); // don't care about position!
+         };
+
         //DATA : Index,Artist,Total,Diff,Diversity
+        let x_max = d3.max(data, x => x[X_FIELD])
         let xScale = d3.scaleLinear(data)
           .domain([0,x_max])
           .range([0,width])
+        let y_max = d3.max(data, x => x[Y_FIELD])
         let yScale = d3.scaleLinear(data)
           .domain([0,y_max])
-          .range([0,height])
-        console.log(yScale(10000))
+          .range([height,0])
 
+        //Draw dots
         svg.append("g")
           .selectAll("dot")
           .data(data)
@@ -38,8 +64,17 @@
           .append("circle")
           .attr("cx", function(d){return xScale(d[X_FIELD]);})
           .attr("cy", function(d){return yScale(d[Y_FIELD]);})
-          .attr("r", 5)
+          .attr("r", 3)
           .style("fill", "#69b3a2")
+          .on("mouseover", tipMouseover)
+          .on("mouseout", tipMouseout);
+
+        //Draw axes
+        svg.append("g")
+          .call(d3.axisLeft(yScale));
+        svg.append("g")
+          .call(d3.axisBottom(xScale))
+          .attr("transform", "translate(0," + height + ")")
 
       }
           data = d3.csv("all.csv",main)
